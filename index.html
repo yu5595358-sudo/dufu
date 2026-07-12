@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>杜甫智能体 · 诗圣对话</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --ink: #2c2416;
+            --ink-light: #6b5d4d;
+            --ink-faint: #a0927e;
+            --paper: #f7f3e9;
+            --paper-light: #faf7f0;
+            --paper-dark: #ede6d6;
+            --accent: #8b2500;
+            --accent-hover: #a03000;
+            --gold: #b8860b;
+            --gold-light: #d4a843;
+            --shadow: rgba(44, 36, 22, 0.08);
+            --shadow-strong: rgba(44, 36, 22, 0.14);
+        }
+
+        /* ===== 基础 ===== */
+        body {
+            font-family: 'Songti SC', 'SimSun', 'STSong', 'Noto Serif SC', serif;
+            background: var(--paper);
+            min-height: 100vh;
+            color: var(--ink);
+            position: relative;
+        }
+
+        /* ===== 宣纸纹理 ===== */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(139, 37, 0, 0.015) 2px,
+                    rgba(139, 37, 0, 0.015) 3px
+                ),
+                repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 3px,
+                    rgba(139, 37, 0, 0.008) 3px,
+                    rgba(139, 37, 0, 0.008) 4px
+                );
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ===== 墨韵装饰（左上 & 右下） ===== */
+        .ink-wash {
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.4;
+        }
+        .ink-wash--top-right {
+            top: -120px;
+            right: -80px;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle at 40% 40%,
+                rgba(44, 36, 22, 0.07) 0%,
+                rgba(44, 36, 22, 0.04) 30%,
+                transparent 70%);
+            animation: inkFloat 12s ease-in-out infinite;
+        }
+        .ink-wash--bottom-left {
+            bottom: -100px;
+            left: -60px;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle at 60% 60%,
+                rgba(184, 134, 11, 0.06) 0%,
+                rgba(184, 134, 11, 0.03) 30%,
+                transparent 70%);
+            animation: inkFloat 15s ease-in-out infinite reverse;
+        }
+
+        @keyframes inkFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(15px, -20px) scale(1.05); }
+            66% { transform: translate(-10px, 15px) scale(0.95); }
+        }
+
+        /* ===== 远山 ===== */
+        .mountain {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(to top,
+                rgba(44, 36, 22, 0.06) 0%,
+                rgba(44, 36, 22, 0.03) 35%,
+                transparent 100%);
+            clip-path: polygon(
+                0% 100%, 0% 65%,
+                8% 50%, 15% 58%,
+                22% 42%, 30% 52%,
+                38% 35%, 48% 48%,
+                55% 30%, 63% 44%,
+                72% 28%, 80% 40%,
+                88% 32%, 95% 45%,
+                100% 38%, 100% 100%
+            );
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        /* ===== 主容器 ===== */
+        .main-container {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px 140px;
+        }
+
+        /* ===== 主卡片 ===== */
+        .card {
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(139, 37, 0, 0.08);
+            border-radius: 28px;
+            padding: 56px 48px 48px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            box-shadow:
+                0 24px 80px var(--shadow),
+                0 4px 16px rgba(139, 37, 0, 0.06),
+                inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            animation: cardEntry 1.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 顶部装饰线 — 仿古书函套 */
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 10%; right: 10%;
+            height: 3px;
+            background: linear-gradient(90deg,
+                transparent,
+                var(--accent) 20%,
+                var(--gold) 50%,
+                var(--accent) 80%,
+                transparent);
+            opacity: 0.4;
+            border-radius: 0 0 3px 3px;
+        }
+
+        /* 内框装饰 */
+        .card::after {
+            content: '';
+            position: absolute;
+            top: 12px; left: 12px; right: 12px; bottom: 12px;
+            border: 1px solid rgba(139, 37, 0, 0.06);
+            border-radius: 20px;
+            pointer-events: none;
+        }
+
+        @keyframes cardEntry {
+            0% { opacity: 0; transform: translateY(40px) scale(0.96); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* ===== 印章 — 朱红蜡封印 ===== */
+        .seal {
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 20px;
+            background: radial-gradient(circle at 35% 35%, #c0392b, #8b2500);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            font-weight: 700;
+            color: #f5e6d3;
+            box-shadow:
+                0 6px 20px rgba(139, 37, 0, 0.35),
+                inset 0 2px 4px rgba(255, 200, 150, 0.3),
+                inset 0 -2px 4px rgba(0, 0, 0, 0.15);
+            position: relative;
+            animation: sealAppear 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            letter-spacing: 0;
+        }
+
+        .seal::after {
+            content: '';
+            position: absolute;
+            inset: 5px;
+            border: 1.5px solid rgba(245, 230, 211, 0.25);
+            border-radius: 50%;
+        }
+
+        @keyframes sealAppear {
+            0% { transform: scale(0) rotate(-30deg); opacity: 0; }
+            100% { transform: scale(1) rotate(0); opacity: 1; }
+        }
+
+        /* ===== 标题 ===== */
+        .title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--ink);
+            margin-bottom: 4px;
+            letter-spacing: 6px;
+        }
+
+        .title-sub {
+            font-size: 0.85rem;
+            color: var(--ink-faint);
+            letter-spacing: 8px;
+            margin-bottom: 28px;
+            font-weight: 300;
+        }
+
+        /* ===== 分隔线 ===== */
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 24px 0;
+            color: var(--ink-faint);
+            font-size: 0.7rem;
+            letter-spacing: 2px;
+        }
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(139, 37, 0, 0.12), transparent);
+        }
+
+        /* ===== 诗句 ===== */
+        .poem-quote {
+            background: linear-gradient(135deg, var(--paper) 0%, var(--paper-light) 100%);
+            border-left: 3px solid var(--accent);
+            padding: 20px 24px;
+            margin: 0 0 20px;
+            text-align: left;
+            border-radius: 0 14px 14px 0;
+            position: relative;
+        }
+
+        .poem-quote p {
+            font-size: 1.05rem;
+            line-height: 2.2;
+            color: var(--ink-light);
+            font-style: italic;
+        }
+
+        .poem-quote p + p {
+            margin-top: 2px;
+        }
+
+        .poem-quote .author {
+            text-align: right;
+            font-size: 0.8rem;
+            color: var(--accent);
+            margin-top: 6px;
+            font-style: normal;
+            letter-spacing: 1px;
+        }
+
+        /* ===== 功能图标 ===== */
+        .features {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin: 24px 0;
+        }
+
+        .feature-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            color: var(--ink-light);
+            font-size: 0.78rem;
+            letter-spacing: 1px;
+            transition: transform 0.3s ease;
+        }
+        .feature-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .feature-icon {
+            width: 42px; height: 42px;
+            background: linear-gradient(135deg, var(--paper-light), var(--paper-dark));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            border: 1px solid rgba(139, 37, 0, 0.06);
+            box-shadow: 0 2px 8px var(--shadow);
+            transition: box-shadow 0.3s ease;
+        }
+        .feature-item:hover .feature-icon {
+            box-shadow: 0 4px 16px var(--shadow-strong);
+        }
+
+        /* ===== 提示框 ===== */
+        .hint-box {
+            background: linear-gradient(135deg,
+                rgba(139, 37, 0, 0.04),
+                rgba(184, 134, 11, 0.04));
+            border: 1px solid rgba(139, 37, 0, 0.1);
+            border-radius: 14px;
+            padding: 16px 20px;
+            margin-top: 20px;
+            font-size: 0.82rem;
+            color: var(--ink-light);
+            line-height: 1.9;
+            position: relative;
+        }
+
+        .hint-box::before {
+            content: '💡';
+            position: absolute;
+            top: -12px;
+            left: 24px;
+            background: var(--paper-light);
+            padding: 0 8px;
+            font-size: 1rem;
+            border-radius: 4px;
+        }
+
+        /* ===== 底部 ===== */
+        .footer {
+            margin-top: 28px;
+            font-size: 0.7rem;
+            color: var(--ink-faint);
+            letter-spacing: 2px;
+            opacity: 0.5;
+        }
+
+        /* ===== 右下角提示 ===== */
+        .corner-hint {
+            position: fixed;
+            bottom: 90px;
+            right: 28px;
+            background: var(--accent);
+            color: white;
+            padding: 10px 18px;
+            border-radius: 24px;
+            font-size: 0.82rem;
+            box-shadow: 0 6px 20px rgba(139, 37, 0, 0.3);
+            animation: hintBounce 2.5s ease-in-out infinite;
+            z-index: 1;
+            pointer-events: none;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .corner-hint::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            right: 26px;
+            width: 10px; height: 10px;
+            background: var(--accent);
+            transform: rotate(45deg);
+            border-radius: 2px;
+        }
+
+        @keyframes hintBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        /* ===== Coze iframe 固定覆盖 ===== */
+        iframe[src*="sdk.coze"] {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 2147483647 !important;
+            border: none !important;
+        }
+
+        /* ===== 加载动画 ===== */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--paper);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 24px;
+            transition: opacity 0.8s ease, visibility 0.8s ease;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .loading-seal {
+            width: 64px; height: 64px;
+            background: radial-gradient(circle at 35% 35%, #c0392b, #8b2500);
+            color: #f5e6d3;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 700;
+            box-shadow: 0 4px 16px rgba(139, 37, 0, 0.3);
+            animation: loadPulse 1.6s ease-in-out infinite;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .loading-seal::after {
+            content: '';
+            position: absolute;
+            inset: 4px;
+            border: 1.5px solid rgba(245, 230, 211, 0.2);
+            border-radius: 50%;
+        }
+
+        @keyframes loadPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.08); opacity: 0.85; }
+        }
+
+        .loading-text {
+            font-size: 0.95rem;
+            color: var(--ink-light);
+            letter-spacing: 4px;
+            animation: textPulse 1.6s ease-in-out infinite;
+        }
+
+        @keyframes textPulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        /* 加载动画墨点 */
+        .loading-dots {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px;
+        }
+        .loading-dots span {
+            width: 6px; height: 6px;
+            background: var(--ink-faint);
+            border-radius: 50%;
+            animation: dotBounce 1.4s ease-in-out infinite both;
+        }
+        .loading-dots span:nth-child(1) { animation-delay: 0s; }
+        .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes dotBounce {
+            0%, 80%, 100% { transform: scale(0.4); opacity: 0.3; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        /* ===== 飘落花瓣 ===== */
+        .petal {
+            position: fixed;
+            width: 10px; height: 10px;
+            background: rgba(184, 134, 11, 0.12);
+            border-radius: 50% 0 50% 50%;
+            pointer-events: none;
+            z-index: 0;
+            animation: fall linear infinite;
+        }
+
+        @keyframes fall {
+            0% { transform: translateY(-10vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.6; }
+            90% { opacity: 0.6; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 600px) {
+            .card { padding: 40px 24px 36px; border-radius: 22px; }
+            .title { font-size: 1.7rem; letter-spacing: 4px; }
+            .title-sub { font-size: 0.75rem; letter-spacing: 6px; }
+            .features { gap: 18px; }
+            .poem-quote p { font-size: 0.92rem; }
+            .seal { width: 60px; height: 60px; font-size: 24px; }
+            .corner-hint { bottom: 80px; right: 16px; font-size: 0.75rem; padding: 8px 14px; }
+            .ink-wash--top-right { width: 300px; height: 300px; }
+            .ink-wash--bottom-left { width: 250px; height: 250px; }
+        }
+
+        @media (max-width: 400px) {
+            .card { padding: 32px 18px 28px; }
+            .title { font-size: 1.4rem; letter-spacing: 3px; }
+            .features { gap: 14px; }
+            .feature-item { font-size: 0.7rem; }
+            .feature-icon { width: 36px; height: 36px; font-size: 1rem; }
+        }
+
+        /* 选择文本颜色 */
+        ::selection {
+            background: rgba(139, 37, 0, 0.12);
+            color: var(--ink);
+        }
+    </style>
+    <base target="_blank">
+</head>
+<body>
+
+    <!-- 加载动画 -->
+    <div class="loading-overlay" id="loading">
+        <div class="loading-seal">杜</div>
+        <div class="loading-text">正在唤醒诗圣</div>
+        <div class="loading-dots">
+            <span></span><span></span><span></span>
+        </div>
+    </div>
+
+    <!-- 墨韵装饰 -->
+    <div class="ink-wash ink-wash--top-right"></div>
+    <div class="ink-wash ink-wash--bottom-left"></div>
+
+    <!-- 远山 -->
+    <div class="mountain"></div>
+
+    <!-- 飘落花瓣 -->
+    <div id="petals-container"></div>
+
+    <!-- 右下角提示 -->
+    <div class="corner-hint" id="cornerHint">👇 点击这里与诗圣对话</div>
+
+    <!-- 主内容 -->
+    <div class="main-container">
+        <div class="card">
+
+            <!-- 朱红印章 -->
+            <div class="seal">杜</div>
+
+            <!-- 标题 -->
+            <h1 class="title">杜甫智能体</h1>
+            <p class="title-sub">— 与诗圣对话 · 穿越千年 —</p>
+
+            <!-- 分隔 -->
+            <div class="divider">诗 词 节 选</div>
+
+            <!-- 诗句 -->
+            <div class="poem-quote">
+                <p>"会当凌绝顶，一览众山小。"</p>
+                <p>"安得广厦千万间，大庇天下寒士俱欢颜。"</p>
+                <div class="author">—— 唐 · 杜甫</div>
+            </div>
+
+            <!-- 分隔 -->
+            <div class="divider">功 能</div>
+
+            <!-- 功能 -->
+            <div class="features">
+                <div class="feature-item">
+                    <div class="feature-icon">💬</div>
+                    <span>诗词对话</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">📜</div>
+                    <span>典故解析</span>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🎨</div>
+                    <span>意境赏析</span>
+                </div>
+            </div>
+
+            <!-- 提示 -->
+            <div class="hint-box">
+                点击右下角浮窗按钮，即可与诗圣杜甫展开跨越千年的对话。<br>
+                既可探讨诗词创作背景、赏析名句，亦可与他聊聊盛唐气象。
+            </div>
+
+            <!-- 底部 -->
+            <div class="footer">Powered by Coze · 扣子</div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- Coze Web SDK 嵌入 -->
+    <!-- ========================================== -->
+    <script src="https://lf-cdn.coze.cn/obj/unpkg/latest/coze/web-sdk/dist/js-umd/index.min.js"></script>
+    <script>
+        const PROJECT_ID = '7661217722357006399';
+        const TOKEN = 'pat_290BdezvSO69k14OyQXIsnBNuIzKR41tD2ep1pc4qt0m1I3pm5MTmxT2J4xgc1Ax';
+
+        cozeWebSDK.init({
+            projectId: PROJECT_ID,
+            refreshToken: () => Promise.resolve(TOKEN),
+            theme: 'light',
+            config: {
+                greeting: '你好，我是杜甫。今日有何雅兴，愿与君共论诗道？',
+                placeholder: '请向诗圣提问...',
+            },
+            onIframeReady: () => {
+                console.log('[Coze] 智能体已就绪');
+                if (typeof cozeWebSDK.updateConfig === 'function') {
+                    cozeWebSDK.updateConfig({
+                        greeting: '你好，我是杜甫。今日有何雅兴，愿与君共论诗道？',
+                        placeholder: '请向诗圣提问...',
+                    });
+                }
+            },
+            onProjectInfoLoaded: (info) => {
+                console.log('[Coze] 项目加载成功:', info);
+            },
+            onTokenExpired: () => {
+                console.error('[Coze] Token 已过期，请更新 PAT');
+            },
+            onTokenInvalid: () => {
+                console.error('[Coze] Token 无效，请检查 PAT');
+            },
+            onNetworkError: (err) => {
+                console.error('[Coze] 网络错误:', err);
+            },
+            onNotify: (msg) => {
+                console.log('[Coze] 通知:', msg);
+            },
+        });
+
+        // 页面加载
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('loading').classList.add('hidden');
+            }, 1200);
+
+            setTimeout(() => {
+                const hint = document.getElementById('cornerHint');
+                if (hint) {
+                    hint.style.transition = 'opacity 0.6s';
+                    hint.style.opacity = '0';
+                    setTimeout(() => hint.remove(), 600);
+                }
+            }, 5000);
+        });
+
+        // 飘落花瓣
+        function createPetals() {
+            const container = document.getElementById('petals-container');
+            const colors = [
+                'rgba(184,134,11,0.1)',
+                'rgba(139,37,0,0.06)',
+                'rgba(180,120,60,0.08)',
+            ];
+
+            for (let i = 0; i < 12; i++) {
+                const petal = document.createElement('div');
+                petal.className = 'petal';
+                petal.style.left = Math.random() * 100 + 'vw';
+                petal.style.animationDuration = (12 + Math.random() * 18) + 's';
+                petal.style.animationDelay = Math.random() * 12 + 's';
+                petal.style.background = colors[Math.floor(Math.random() * colors.length)];
+                petal.style.width = (6 + Math.random() * 8) + 'px';
+                petal.style.height = petal.style.width;
+                container.appendChild(petal);
+            }
+        }
+        createPetals();
+    </script>
+</body>
+</html>
